@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # pycodestyle.py - Check Python source code formatting, according to PEP 8
 #
 # Copyright (C) 2006-2009 Johann C. Rocholl <johann@rocholl.net>
@@ -2544,8 +2544,13 @@ def _main():
     if report.total_errors:
         if options.count:
             sys.stderr.write(str(report.total_errors) + '\n')
-        sys.exit(1)
+        # sys.exit(1)
 
 
 if __name__ == '__main__':
+    import yappi
+    yappi.set_clock_type('cpu')
+    yappi.start()
     _main()
+    stats = yappi.get_func_stats()
+    stats.save('pycodestyle.callgrind', type='callgrind')
