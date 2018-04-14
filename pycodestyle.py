@@ -1450,8 +1450,8 @@ def python_3000_raise_comma(self):
     Okay: raise DummyError("Message")
     W602: raise DummyError, "Message"
     """
-    match = RAISE_COMMA_REGEX.match(logical_line)
-    if match and not RERAISE_COMMA_REGEX.match(logical_line):
+    match = RAISE_COMMA_REGEX.match(self.logical_line)
+    if match and not RERAISE_COMMA_REGEX.match(self.logical_line):
         yield match.end() - 1, "W602 deprecated form of raising exception"
 
 
@@ -1464,7 +1464,7 @@ def python_3000_not_equal(self):
     Okay: if a != 'no':
     W603: if a <> 'no':
     """
-    pos = logical_line.find('<>')
+    pos = self.logical_line.find('<>')
     if pos > -1:
         yield pos, "W603 '<>' is deprecated, use '!='"
 
@@ -1476,12 +1476,12 @@ def python_3000_backticks(self):
     Okay: val = repr(1 + 2)
     W604: val = `1 + 2`
     """
-    pos = logical_line.find('`')
+    pos = self.logical_line.find('`')
     if pos > -1:
         yield pos, "W604 backticks are deprecated, use 'repr()'"
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def python_3000_invalid_escape_sequence(self):
     r"""Invalid escape sequences are deprecated in Python 3.6.
 
@@ -1510,7 +1510,7 @@ def python_3000_invalid_escape_sequence(self):
         'U',
     ]
 
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
         if token_type == tokenize.STRING:
             quote = text[-3:] if text[-3:] in ('"""', "'''") else text[-1]
             # Extract string modifiers (e.g. u or r)
@@ -1546,7 +1546,7 @@ def python_3000_async_await_keywords(self):
     # https://docs.python.org/3/reference/grammar.html
 
     state = None
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
         error = False
 
         if state is None:
