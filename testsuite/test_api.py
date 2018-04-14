@@ -45,7 +45,7 @@ class APITestCase(unittest.TestCase):
         def check_dummy(physical_line, line_number):
             if False:
                 yield
-        pycodestyle.register_check(check_dummy, ['Z001'])
+        pycodestyle.register_check("tree", "filename")(check_dummy, ['Z001'])
 
         self.assertTrue(check_dummy in pycodestyle._checks['physical_line'])
         codes, args = pycodestyle._checks['physical_line'][check_dummy]
@@ -60,15 +60,15 @@ class APITestCase(unittest.TestCase):
         def check_dummy(logical_line, tokens):
             if False:
                 yield
-        pycodestyle.register_check(check_dummy, ['Z401'])
+        pycodestyle.register_check("tree", "filename")(check_dummy, ['Z401'])
 
         self.assertTrue(check_dummy in pycodestyle._checks['logical_line'])
         codes, args = pycodestyle._checks['logical_line'][check_dummy]
         self.assertTrue('Z401' in codes)
         self.assertEqual(args, ['logical_line', 'tokens'])
 
-        pycodestyle.register_check(check_dummy, [])
-        pycodestyle.register_check(check_dummy, ['Z402', 'Z403'])
+        pycodestyle.register_check("tree", "filename")(check_dummy, [])
+        pycodestyle.register_check("tree", "filename")(check_dummy, ['Z402', 'Z403'])
         codes, args = pycodestyle._checks['logical_line'][check_dummy]
         self.assertEqual(codes, ['Z401', 'Z402', 'Z403'])
         self.assertEqual(args, ['logical_line', 'tokens'])
@@ -78,7 +78,7 @@ class APITestCase(unittest.TestCase):
                             for name, func, args in options.logical_checks))
 
     def test_register_ast_check(self):
-        pycodestyle.register_check(DummyChecker, ['Z701'])
+        pycodestyle.register_check("tree", "filename")(DummyChecker, ['Z701'])
 
         self.assertTrue(DummyChecker in pycodestyle._checks['tree'])
         codes, args = pycodestyle._checks['tree'][DummyChecker]
@@ -97,14 +97,14 @@ class APITestCase(unittest.TestCase):
         def check_dummy(logical, tokens):
             if False:
                 yield
-        pycodestyle.register_check(InvalidChecker, ['Z741'])
-        pycodestyle.register_check(check_dummy, ['Z441'])
+        pycodestyle.register_check("tree", "filename")(InvalidChecker, ['Z741'])
+        pycodestyle.register_check("tree", "filename")(check_dummy, ['Z441'])
 
         for checkers in pycodestyle._checks.values():
             self.assertTrue(DummyChecker not in checkers)
             self.assertTrue(check_dummy not in checkers)
 
-        self.assertRaises(TypeError, pycodestyle.register_check)
+        self.assertRaises(TypeError, pycodestyle.register_check("tree", "filename"))
 
     def test_styleguide(self):
         report = pycodestyle.StyleGuide().check_files()
@@ -320,7 +320,7 @@ class APITestCase(unittest.TestCase):
 
     def test_check_unicode(self):
         # Do not crash if lines are Unicode (Python 2.x)
-        pycodestyle.register_check(DummyChecker, ['Z701'])
+        pycodestyle.register_check("tree", "filename")(DummyChecker, ['Z701'])
         source = '#\n'
         if hasattr(source, 'decode'):
             source = source.decode('ascii')
@@ -333,7 +333,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(count_errors, 0)
 
     def test_check_nullbytes(self):
-        pycodestyle.register_check(DummyChecker, ['Z701'])
+        pycodestyle.register_check("tree", "filename")(DummyChecker, ['Z701'])
 
         pep8style = pycodestyle.StyleGuide()
         count_errors = pep8style.input_file('stdin', lines=['\x00\n'])
@@ -354,7 +354,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(count_errors, 1)
 
     def test_styleguide_unmatched_triple_quotes(self):
-        pycodestyle.register_check(DummyChecker, ['Z701'])
+        pycodestyle.register_check("tree", "filename")(DummyChecker, ['Z701'])
         lines = [
             'def foo():\n',
             '    """test docstring""\'\n',
@@ -368,7 +368,7 @@ class APITestCase(unittest.TestCase):
         self.assertTrue(expected in stdout)
 
     def test_styleguide_continuation_line_outdented(self):
-        pycodestyle.register_check(DummyChecker, ['Z701'])
+        pycodestyle.register_check("tree", "filename")(DummyChecker, ['Z701'])
         lines = [
             'def foo():\n',
             '    pass\n',

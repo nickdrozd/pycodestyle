@@ -172,7 +172,7 @@ def _get_parameters(function):
         return inspect.getargspec(function)[0]
 
 
-def register_check():
+def register_check(*args):
     """Register a new check object."""
     def _register_check(check, codes=None):
         def _add_check(check, kind, codes, args):
@@ -181,7 +181,6 @@ def register_check():
             else:
                 _checks[kind][check] = (codes or [''], args)
         if inspect.isfunction(check):
-            args = _get_parameters(check)
             if args and args[0] in ('physical_line', 'logical_line'):
                 if codes is None:
                     codes = ERRORCODE_REGEX.findall(check.__doc__ or '')
@@ -344,25 +343,25 @@ def blank_lines(self):
     top_level_lines = BLANK_LINES_CONFIG['top_level']
     method_lines = BLANK_LINES_CONFIG['method']
 
-    if line_number < top_level_lines + 1 and not previous_logical:
+    if self.line_number < top_level_lines + 1 and not self.previous_logical:
         return  # Don't expect blank lines before the first line
-    if previous_logical.startswith('@'):
-        if blank_lines:
+    if self.previous_logical.startswith('@'):
+        if self.blank_lines:
             yield 0, "E304 blank lines found after function decorator"
-    elif (blank_lines > top_level_lines or
-            (indent_level and blank_lines == method_lines + 1)
+    elif (self.blank_lines > top_level_lines or
+            (self.indent_level and self.blank_lines == method_lines + 1)
           ):
-        yield 0, "E303 too many blank lines (%d)" % blank_lines
-    elif STARTSWITH_TOP_LEVEL_REGEX.match(logical_line):
-        if indent_level:
-            if not (blank_before == method_lines or
-                    previous_indent_level < indent_level or
-                    DOCSTRING_REGEX.match(previous_logical)
+        yield 0, "E303 too many blank lines (%d)" % self.blank_lines
+    elif STARTSWITH_TOP_LEVEL_REGEX.match(self.logical_line):
+        if self.indent_level:
+            if not (self.blank_before == method_lines or
+                    self.previous_indent_level < self.indent_level or
+                    DOCSTRING_REGEX.match(self.previous_logical)
                     ):
-                ancestor_level = indent_level
+                ancestor_level = self.indent_level
                 nested = False
                 # Search backwards for a def ancestor or tree root (top level).
-                for line in lines[line_number - top_level_lines::-1]:
+                for line in self.lines[self.line_number - top_level_lines::-1]:
                     if line.strip() and expand_indent(line) < ancestor_level:
                         ancestor_level = expand_indent(line)
                         nested = line.lstrip().startswith('def ')
@@ -374,17 +373,17 @@ def blank_lines(self):
                 else:
                     yield 0, "E301 expected %s blank line, found 0" % (
                         method_lines,)
-        elif blank_before != top_level_lines:
+        elif self.blank_before != top_level_lines:
             yield 0, "E302 expected %s blank lines, found %d" % (
-                top_level_lines, blank_before)
-    elif (logical_line and
-            not indent_level and
-            blank_before != top_level_lines and
-            previous_unindented_logical_line.startswith(('def ', 'class '))
+                top_level_lines, self.blank_before)
+    elif (self.logical_line and
+            not self.indent_level and
+            self.blank_before != top_level_lines and
+            self.previous_unindented_logical_line.startswith(('def ', 'class '))
           ):
         yield 0, "E305 expected %s blank lines after " \
             "class or function definition, found %d" % (
-                top_level_lines, blank_before)
+                top_level_lines, self.blank_before)
 
 
 @register_check("logical_line")
@@ -510,14 +509,14 @@ def indentation(self):
     E113: a = 1\n    b = 2
     E116: a = 1\n    # b = 2
     """
-    c = 0 if logical_line else 3
-    tmpl = "E11%d %s" if logical_line else "E11%d %s (comment)"
-    if indent_level % 4:
+    c = 0 if self.logical_line else 3
+    tmpl = "E11%d %s" if self.logical_line else "E11%d %s (comment)"
+    if self.indent_level % 4:
         yield 0, tmpl % (1 + c, "indentation is not a multiple of four")
-    indent_expect = previous_logical.endswith(':')
-    if indent_expect and indent_level <= previous_indent_level:
+    indent_expect = self.previous_logical.endswith(':')
+    if indent_expect and self.indent_level <= self.previous_indent_level:
         yield 0, tmpl % (2 + c, "expected an indented block")
-    elif not indent_expect and indent_level > previous_indent_level:
+    elif not indent_expect and self.indent_level > self.previous_indent_level:
         yield 0, tmpl % (3 + c, "unexpected indentation")
 
 
@@ -550,19 +549,19 @@ def continued_indentation(self):
     E129: if (a or\n    b):\n    pass
     E131: a = (\n    42\n 24)
     """
-    first_row = tokens[0][2][0]
-    nrows = 1 + tokens[-1][2][0] - first_row
-    if noqa or nrows == 1:
+    first_row = self.tokens[0][2][0]
+    nrows = 1 + self.tokens[-1][2][0] - first_row
+    if self.noqa or nrows == 1:
         return
 
     # indent_next tells us whether the next block is indented; assuming
     # that it is indented by 4 spaces, then we should not allow 4-space
     # indents on the final continuation line; in turn, some other
     # indents are allowed to have an extra 4 spaces.
-    indent_next = logical_line.endswith(':')
+    indent_next = self.logical_line.endswith(':')
 
     row = depth = 0
-    valid_hangs = (4,) if indent_char != '\t' else (4, 8)
+    valid_hangs = (4,) if self.indent_char != '\t' else (4, 8)
     # remember how many brackets were opened on each line
     parens = [0] * nrows
     # relative indents of physical lines
@@ -573,15 +572,15 @@ def continued_indentation(self):
     hangs = [None]
     # visual indents
     indent_chances = {}
-    last_indent = tokens[0][2]
+    last_indent = self.tokens[0][2]
     visual_indent = None
     last_token_multiline = False
     # for each depth, memorize the visual indent column
     indent = [last_indent[1]]
-    if verbose >= 3:
-        print(">>> " + tokens[0][4].rstrip())
+    if self.verbose >= 3:
+        print(">>> " + self.tokens[0][4].rstrip())
 
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
 
         newline = row < start[0] - first_row
         if newline:
@@ -591,11 +590,11 @@ def continued_indentation(self):
         if newline:
             # this is the beginning of a continuation line.
             last_indent = start
-            if verbose >= 3:
+            if self.verbose >= 3:
                 print("... " + line.rstrip())
 
             # record the initial indent.
-            rel_indent[row] = expand_indent(line) - indent_level
+            rel_indent[row] = expand_indent(line) - self.indent_level
 
             # identify closing bracket
             close_bracket = (token_type == tokenize.OP and text in ']})')
@@ -619,7 +618,7 @@ def continued_indentation(self):
                            "visual indentation")
             elif close_bracket and not hang:
                 # closing bracket matches indentation of opening bracket's line
-                if hang_closing:
+                if self.hang_closing:
                     yield start, "E133 closing bracket is missing indentation"
             elif indent[depth] and start[1] < indent[depth]:
                 if visual_indent is not True:
@@ -628,7 +627,7 @@ def continued_indentation(self):
                            "under-indented for visual indent")
             elif hanging_indent or (indent_next and rel_indent[row] == 8):
                 # hanging indent is verified
-                if close_bracket and not hang_closing:
+                if close_bracket and not self.hang_closing:
                     yield (start, "E123 closing bracket does not match "
                            "indentation of opening bracket's line")
                 hangs[depth] = hang
@@ -660,7 +659,7 @@ def continued_indentation(self):
                 not indent[depth]):
             indent[depth] = start[1]
             indent_chances[start[1]] = True
-            if verbose >= 4:
+            if self.verbose >= 4:
                 print("bracket depth %s indent to %s" % (depth, start[1]))
         # deal with implicit string concatenation
         elif (token_type in (tokenize.STRING, tokenize.COMMENT) or
@@ -682,7 +681,7 @@ def continued_indentation(self):
                     open_rows.append([])
                 open_rows[depth].append(row)
                 parens[row] += 1
-                if verbose >= 4:
+                if self.verbose >= 4:
                     print("bracket depth %s seen, col %s, visual min = %s" %
                           (depth, start[1], indent[depth]))
             elif text in ')]}' and depth > 0:
@@ -712,7 +711,7 @@ def continued_indentation(self):
         if last_token_multiline:
             rel_indent[end[0] - first_row] = rel_indent[row]
 
-    if indent_next and expand_indent(line) == indent_level + 4:
+    if indent_next and expand_indent(line) == self.indent_level + 4:
         pos = (start[0], indent[0] + 4)
         if visual_indent:
             code = "E129 visually indented line"
@@ -737,15 +736,15 @@ def whitespace_before_parameters(self):
     E211: dict ['key'] = list[index]
     E211: dict['key'] = list [index]
     """
-    prev_type, prev_text, __, prev_end, __ = tokens[0]
-    for index in range(1, len(tokens)):
-        token_type, text, start, end, __ = tokens[index]
+    prev_type, prev_text, __, prev_end, __ = self.tokens[0]
+    for index in range(1, len(self.tokens)):
+        token_type, text, start, end, __ = self.tokens[index]
         if (token_type == tokenize.OP and
             text in '([' and
             start != prev_end and
             (prev_type == tokenize.NAME or prev_text in '}])') and
             # Syntax "class A (B):" is allowed, but avoid it
-            (index < 2 or tokens[index - 2][1] != 'class') and
+            (index < 2 or self.tokens[index - 2][1] != 'class') and
                 # Allow "return (a.foo for a in range(5))"
                 not keyword.iskeyword(prev_text)):
             yield prev_end, "E211 whitespace before '%s'" % text
@@ -811,7 +810,7 @@ def missing_whitespace_around_operator(self):
     need_space = False
     prev_type = tokenize.OP
     prev_text = prev_end = None
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
         if token_type in SKIP_COMMENTS:
             continue
         if text in ('(', 'lambda'):
@@ -916,12 +915,12 @@ def whitespace_around_named_parameter_equals(self):
     require_space = False
     prev_end = None
     annotated_func_arg = False
-    in_def = bool(STARTSWITH_DEF_REGEX.match(logical_line))
+    in_def = bool(STARTSWITH_DEF_REGEX.match(self.logical_line))
 
     message = "E251 unexpected spaces around keyword / parameter equals"
     missing_message = "E252 missing whitespace around parameter equals"
 
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
         if token_type == tokenize.NL:
             continue
         if no_space:
@@ -977,7 +976,7 @@ def whitespace_before_comment(self):
     E266: ### Block comment
     """
     prev_end = (0, 0)
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
         if token_type == tokenize.COMMENT:
             inline_comment = line[:start[1]].strip()
             if inline_comment:
@@ -1048,15 +1047,15 @@ def module_imports_on_top_of_file(self):
 
     allowed_try_keywords = ('try', 'except', 'else', 'finally')
 
-    if indent_level:  # Allow imports in conditional statements or functions
+    if self.indent_level:  # Allow imports in conditional statements or functions
         return
-    if not logical_line:  # Allow empty lines or comments
+    if not self.logical_line:  # Allow empty lines or comments
         return
-    if noqa:
+    if self.noqa:
         return
-    line = logical_line
+    line = self.logical_line
     if line.startswith('import ') or line.startswith('from '):
-        if checker_state.get('seen_non_imports', False):
+        if self.checker_state.get('seen_non_imports', False):
             yield 0, "E402 module level import not at top of file"
     elif re.match(DUNDER_REGEX, line):
         return
@@ -1066,12 +1065,12 @@ def module_imports_on_top_of_file(self):
         return
     elif is_string_literal(line):
         # The first literal is a docstring, allow it. Otherwise, report error.
-        if checker_state.get('seen_docstring', False):
-            checker_state['seen_non_imports'] = True
+        if self.checker_state.get('seen_docstring', False):
+            self.checker_state['seen_non_imports'] = True
         else:
-            checker_state['seen_docstring'] = True
+            self.checker_state['seen_docstring'] = True
     else:
-        checker_state['seen_non_imports'] = True
+        self.checker_state['seen_non_imports'] = True
 
 
 @register_check("logical_line")
@@ -1155,7 +1154,7 @@ def explicit_line_join(self):
     prev_start = prev_end = parens = 0
     comment = False
     backslash = None
-    for token_type, text, start, end, line in tokens:
+    for token_type, text, start, end, line in self.tokens:
         if token_type == tokenize.COMMENT:
             comment = True
         if start[0] != prev_start and parens and backslash and not comment:
@@ -1234,7 +1233,7 @@ def break_before_binary_operator(self):
     Okay: foo(x,\n    -y)
     Okay: foo(x,  # comment\n    -y)
     """
-    for context in _break_around_binary_operators(tokens):
+    for context in _break_around_binary_operators(self.tokens):
         (token_type, text, previous_token_type, previous_text,
          line_break, unary_context, start) = context
         if (_is_binary_operator(token_type, text) and line_break and
@@ -1267,7 +1266,7 @@ def break_after_binary_operator(self):
     Okay: var = (1 /\n       -2)
     Okay: var = (1 +\n       -1 +\n       -2)
     """
-    for context in _break_around_binary_operators(tokens):
+    for context in _break_around_binary_operators(self.tokens):
         (token_type, text, previous_token_type, previous_text,
          line_break, unary_context, start) = context
         if (_is_binary_operator(previous_token_type, previous_text) and
@@ -1296,7 +1295,7 @@ def comparison_to_singleton(self):
     set to some other value.  The other value might have a type (such as a
     container) that could be false in a boolean context!
     """
-    match = not noqa and COMPARE_SINGLETON_REGEX.search(logical_line)
+    match = not self.noqa and COMPARE_SINGLETON_REGEX.search(self.logical_line)
     if match:
         singleton = match.group(1) or match.group(3)
         same = (match.group(2) == '==')
@@ -1351,8 +1350,8 @@ def comparison_type(self):
     Okay: if isinstance(obj, basestring):
     Okay: if type(a1) is type(b1):
     """
-    match = COMPARE_TYPE_REGEX.search(logical_line)
-    if match and not noqa:
+    match = COMPARE_TYPE_REGEX.search(self.logical_line)
+    if match and not self.noqa:
         inst = match.group(1)
         if inst and isidentifier(inst) and inst not in SINGLETONS:
             return  # Allow comparison for types which are not obvious
@@ -1367,11 +1366,11 @@ def bare_except(self):
     Okay: except BaseException:
     E722: except:
     """
-    if noqa:
+    if self.noqa:
         return
 
     regex = re.compile(r"except\s*:")
-    match = regex.match(logical_line)
+    match = regex.match(self.logical_line)
     if match:
         yield match.start(), "E722 do not use bare 'except'"
 
@@ -1404,8 +1403,8 @@ def ambiguous_identifier(self):
     E743: def l(x):
     """
     idents_to_avoid = ('l', 'O', 'I')
-    prev_type, prev_text, prev_start, prev_end, __ = tokens[0]
-    for token_type, text, start, end, line in tokens[1:]:
+    prev_type, prev_text, prev_start, prev_end, __ = self.tokens[0]
+    for token_type, text, start, end, line in self.tokens[1:]:
         ident = pos = None
         # identifiers on the lhs of an assignment operator
         if token_type == tokenize.OP and '=' in text:
@@ -1436,8 +1435,8 @@ def python_3000_has_key(self):
     Okay: if "alph" in d:\n    print d["alph"]
     W601: assert d.has_key('alph')
     """
-    pos = logical_line.find('.has_key(')
-    if pos > -1 and not noqa:
+    pos = self.logical_line.find('.has_key(')
+    if pos > -1 and not self.noqa:
         yield pos, "W601 .has_key() is deprecated, use 'in'"
 
 
@@ -1816,10 +1815,7 @@ class Checker(object):
 
     def run_check(self, check, argument_names):
         """Run a check plugin."""
-        arguments = []
-        for name in argument_names:
-            arguments.append(getattr(self, name))
-        return check(*arguments)
+        return check(self)
 
     def init_checker_state(self, name, argument_names):
         """Prepare custom state for the specific checker plugin."""
