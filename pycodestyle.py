@@ -311,10 +311,10 @@ def maximum_line_length(self):
 ##############################################################################
 
 
-@register_check(logical_line, blank_lines, indent_level, line_number,
-                blank_before, previous_logical,
-                previous_unindented_logical_line, previous_indent_level,
-                lines)
+@register_check("logical_line", "blank_lines", "indent_level", "line_number",
+                "blank_before", "previous_logical",
+                "previous_unindented_logical_line", "previous_indent_level",
+                "lines")
 def blank_lines(self):
     r"""Separate top-level function and class definitions with two blank lines.
 
@@ -387,7 +387,7 @@ def blank_lines(self):
                 top_level_lines, blank_before)
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def extraneous_whitespace(self):
     r"""Avoid extraneous whitespace.
 
@@ -420,7 +420,7 @@ def extraneous_whitespace(self):
             yield found, "%s whitespace before '%s'" % (code, char)
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def whitespace_around_keywords(self):
     r"""Avoid extraneous whitespace around keywords.
 
@@ -444,7 +444,7 @@ def whitespace_around_keywords(self):
             yield match.start(2), "E271 multiple spaces after keyword"
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def missing_whitespace_after_import_keyword(self):
     r"""Multiple imports in form from x import (a, b, c) should have space
     between import statement and parenthesised name list.
@@ -462,7 +462,7 @@ def missing_whitespace_after_import_keyword(self):
             yield pos, "E275 missing whitespace after keyword"
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def missing_whitespace(self):
     r"""Each comma, semicolon or colon should be followed by whitespace.
 
@@ -489,8 +489,8 @@ def missing_whitespace(self):
             yield index, "E231 missing whitespace after '%s'" % char
 
 
-@register_check(logical_line, previous_logical, indent_char,
-                indent_level, previous_indent_level)
+@register_check("logical_line", "previous_logical", "indent_char",
+                "indent_level", "previous_indent_level")
 def indentation(self):
     r"""Use 4 spaces per indentation level.
 
@@ -521,8 +521,8 @@ def indentation(self):
         yield 0, tmpl % (3 + c, "unexpected indentation")
 
 
-@register_check(logical_line, tokens, indent_level, hang_closing,
-                          indent_char, noqa, verbose)
+@register_check("logical_line", "tokens", "indent_level", "hang_closing",
+                "indent_char", "noqa", "verbose")
 def continued_indentation(self):
     r"""Continuation lines indentation.
 
@@ -721,7 +721,7 @@ def continued_indentation(self):
         yield pos, "%s with same indent as next logical line" % code
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def whitespace_before_parameters(self):
     r"""Avoid extraneous whitespace.
 
@@ -754,7 +754,7 @@ def whitespace_before_parameters(self):
         prev_end = end
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def whitespace_around_operator(self):
     r"""Avoid extraneous whitespace around an operator.
 
@@ -778,7 +778,7 @@ def whitespace_around_operator(self):
             yield match.start(2), "E222 multiple spaces after operator"
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def missing_whitespace_around_operator(self):
     r"""Surround operators with a single space on either side.
 
@@ -871,7 +871,7 @@ def missing_whitespace_around_operator(self):
         prev_end = end
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def whitespace_around_comma(self):
     r"""Avoid extraneous whitespace after a comma or a colon.
 
@@ -890,7 +890,7 @@ def whitespace_around_comma(self):
             yield found, "E241 multiple spaces after '%s'" % m.group()[0]
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def whitespace_around_named_parameter_equals(self):
     r"""Don't use spaces around the '=' sign in function arguments.
 
@@ -956,7 +956,7 @@ def whitespace_around_named_parameter_equals(self):
         prev_end = end
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def whitespace_before_comment(self):
     r"""Separate inline comments by at least two spaces.
 
@@ -998,7 +998,7 @@ def whitespace_before_comment(self):
             prev_end = end
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def imports_on_separate_lines(self):
     r"""Place imports on separate lines.
 
@@ -1018,8 +1018,7 @@ def imports_on_separate_lines(self):
             yield found, "E401 multiple imports on one line"
 
 
-@register_check(
-        logical_line, indent_level, checker_state, noqa)
+@register_check("logical_line", "indent_level", "checker_state", "noqa")
 def module_imports_on_top_of_file(self):
     r"""Place imports at the top of the file.
 
@@ -1075,7 +1074,7 @@ def module_imports_on_top_of_file(self):
         checker_state['seen_non_imports'] = True
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def compound_statements(self):
     r"""Compound statements (on the same line) are generally discouraged.
 
@@ -1136,7 +1135,7 @@ def compound_statements(self):
         found = line.find(';', found + 1)
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def explicit_line_join(self):
     r"""Avoid explicit line join between brackets.
 
@@ -1215,7 +1214,7 @@ def _break_around_binary_operators(tokens):
             previous_text = text
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def break_before_binary_operator(self):
     r"""
     Avoid breaks before binary operators.
@@ -1245,7 +1244,7 @@ def break_before_binary_operator(self):
             yield start, "W503 line break before binary operator"
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def break_after_binary_operator(self):
     r"""
     Avoid breaks after binary operators.
@@ -1279,7 +1278,7 @@ def break_after_binary_operator(self):
             yield error_pos, "W504 line break after binary operator"
 
 
-@register_check(logical_line, noqa)
+@register_check("logical_line", "noqa")
 def comparison_to_singleton(self):
     r"""Comparison to singletons should use "is" or "is not".
 
@@ -1314,7 +1313,7 @@ def comparison_to_singleton(self):
                                (code, singleton, msg))
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def comparison_negative(self):
     r"""Negative comparison should be done using "not in" and "is not".
 
@@ -1336,7 +1335,7 @@ def comparison_negative(self):
             yield pos, "E714 test for object identity should be 'is not'"
 
 
-@register_check(logical_line, noqa)
+@register_check("logical_line", "noqa")
 def comparison_type(self):
     r"""Object type comparisons should always use isinstance().
 
@@ -1360,7 +1359,7 @@ def comparison_type(self):
         yield match.start(), "E721 do not compare types, use 'isinstance()'"
 
 
-@register_check(logical_line, noqa)
+@register_check("logical_line", "noqa")
 def bare_except(self):
     r"""When catching exceptions, mention specific exceptions when possible.
 
@@ -1377,7 +1376,7 @@ def bare_except(self):
         yield match.start(), "E722 do not use bare 'except'"
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def ambiguous_identifier(self):
     r"""Never use the characters 'l', 'O', or 'I' as variable names.
 
@@ -1430,7 +1429,7 @@ def ambiguous_identifier(self):
         prev_start = start
 
 
-@register_check(logical_line, noqa)
+@register_check("logical_line", "noqa")
 def python_3000_has_key(self):
     r"""The {}.has_key() method is removed in Python 3: use the 'in' operator.
 
@@ -1442,7 +1441,7 @@ def python_3000_has_key(self):
         yield pos, "W601 .has_key() is deprecated, use 'in'"
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def python_3000_raise_comma(self):
     r"""When raising an exception, use "raise ValueError('message')".
 
@@ -1456,7 +1455,7 @@ def python_3000_raise_comma(self):
         yield match.end() - 1, "W602 deprecated form of raising exception"
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def python_3000_not_equal(self):
     r"""New code should always use != instead of <>.
 
@@ -1470,7 +1469,7 @@ def python_3000_not_equal(self):
         yield pos, "W603 '<>' is deprecated, use '!='"
 
 
-@register_check(logical_line)
+@register_check("logical_line")
 def python_3000_backticks(self):
     r"""Use repr() instead of backticks in Python 3.
 
@@ -1533,7 +1532,7 @@ def python_3000_invalid_escape_sequence(self):
                     pos = string.find('\\', pos + 1)
 
 
-@register_check(logical_line, tokens)
+@register_check("logical_line", "tokens")
 def python_3000_async_await_keywords(self):
     """'async' and 'await' are reserved keywords starting with Python 3.7
 
