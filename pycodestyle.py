@@ -407,7 +407,7 @@ def extraneous_whitespace(self):
     E203: if x == 4: print x, y ; x, y = y, x
     E203: if x == 4 : print x, y; x, y = y, x
     """
-    line = logical_line
+    line = self.logical_line
     for match in EXTRANEOUS_WHITESPACE_REGEX.finditer(line):
         text = match.group()
         char = text.strip()
@@ -430,7 +430,7 @@ def whitespace_around_keywords(self):
     E273: True and\tFalse
     E274: True\tand False
     """
-    for match in KEYWORD_REGEX.finditer(logical_line):
+    for match in KEYWORD_REGEX.finditer(self.logical_line):
         before, after = match.groups()
 
         if '\t' in before:
@@ -453,7 +453,7 @@ def missing_whitespace_after_import_keyword(self):
     E275: from foo import(bar, baz)
     E275: from importable.module import(bar, baz)
     """
-    line = logical_line
+    line = self.logical_line
     indicator = ' import('
     if line.startswith('from '):
         found = line.find(indicator)
@@ -476,7 +476,7 @@ def missing_whitespace(self):
     E231: foo(bar,baz)
     E231: [{'a':'b'}]
     """
-    line = logical_line
+    line = self.logical_line
     for index in range(len(line) - 1):
         char = line[index]
         if char in ',;:' and line[index + 1] not in WHITESPACE:
@@ -764,7 +764,7 @@ def whitespace_around_operator(self):
     E223: a = 4\t+ 5
     E224: a = 4 +\t5
     """
-    for match in OPERATOR_REGEX.finditer(logical_line):
+    for match in OPERATOR_REGEX.finditer(self.logical_line):
         before, after = match.groups()
 
         if '\t' in before:
@@ -881,7 +881,7 @@ def whitespace_around_comma(self):
     E241: a = (1,  2)
     E242: a = (1,\t2)
     """
-    line = logical_line
+    line = self.logical_line
     for m in WHITESPACE_AFTER_COMMA_REGEX.finditer(line):
         found = m.start() + 1
         if '\t' in m.group():
@@ -1011,7 +1011,7 @@ def imports_on_separate_lines(self):
     Okay: import myclass
     Okay: import foo.bar.yourclass
     """
-    line = logical_line
+    line = self.logical_line
     if line.startswith('import '):
         found = line.find(',')
         if -1 < found and ';' not in line[:found]:
@@ -1103,7 +1103,7 @@ def compound_statements(self):
     E704: def f(x): return 2*x
     E731: f = lambda x: 2*x
     """
-    line = logical_line
+    line = self.logical_line
     last_char = len(line) - 1
     found = line.find(':')
     prev_found = 0
@@ -1326,7 +1326,7 @@ def comparison_negative(self):
     E714: if not X is Y:\n    pass
     E714: Z = not X.B is Y
     """
-    match = COMPARE_NEGATIVE_REGEX.search(logical_line)
+    match = COMPARE_NEGATIVE_REGEX.search(self.logical_line)
     if match:
         pos = match.start(1)
         if match.group(2) == 'in':
