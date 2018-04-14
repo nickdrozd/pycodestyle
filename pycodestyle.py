@@ -197,7 +197,7 @@ def register_check():
 # Plugins (check functions) for physical lines
 ##############################################################################
 
-@register_check(physical_line, indent_char)
+@register_check("physical_line", "indent_char")
 def tabs_or_spaces(self):
     r"""Never mix tabs and spaces.
 
@@ -211,25 +211,25 @@ def tabs_or_spaces(self):
     Okay: if a == 0:\n        a = 1\n        b = 1
     E101: if a == 0:\n        a = 1\n\tb = 1
     """
-    indent = INDENT_REGEX.match(physical_line).group(1)
+    indent = INDENT_REGEX.match(self.physical_line).group(1)
     for offset, char in enumerate(indent):
-        if char != indent_char:
+        if char != self.indent_char:
             return offset, "E101 indentation contains mixed spaces and tabs"
 
 
-@register_check(physical_line)
+@register_check("physical_line")
 def tabs_obsolete(self):
     r"""For new projects, spaces-only are strongly recommended over tabs.
 
     Okay: if True:\n    return
     W191: if True:\n\treturn
     """
-    indent = INDENT_REGEX.match(physical_line).group(1)
+    indent = INDENT_REGEX.match(self.physical_line).group(1)
     if '\t' in indent:
         return indent.index('\t'), "W191 indentation contains tabs"
 
 
-@register_check(physical_line)
+@register_check("physical_line")
 def trailing_whitespace(self):
     r"""Trailing whitespace is superfluous.
 
@@ -240,18 +240,18 @@ def trailing_whitespace(self):
     W291: spam(1) \n#
     W293: class Foo(object):\n    \n    bang = 12
     """
-    physical_line = physical_line.rstrip('\n')    # chr(10), newline
-    physical_line = physical_line.rstrip('\r')    # chr(13), carriage return
-    physical_line = physical_line.rstrip('\x0c')  # chr(12), form feed, ^L
-    stripped = physical_line.rstrip(' \t\v')
-    if physical_line != stripped:
+    physical_line = self.physical_line.rstrip('\n')    # chr(10), newline
+    physical_line = self.physical_line.rstrip('\r')    # chr(13), carriage return
+    physical_line = self.physical_line.rstrip('\x0c')  # chr(12), form feed, ^L
+    stripped = self.physical_line.rstrip(' \t\v')
+    if self.physical_line != stripped:
         if stripped:
             return len(stripped), "W291 trailing whitespace"
         else:
             return 0, "W293 blank line contains whitespace"
 
 
-@register_check(physical_line, lines, line_number, total_lines)
+@register_check("physical_line", "lines", "line_number", "total_lines")
 def trailing_blank_lines(self):
     r"""Trailing blank lines are superfluous.
 
@@ -260,16 +260,16 @@ def trailing_blank_lines(self):
 
     However the last line should end with a new line (warning W292).
     """
-    if line_number == total_lines:
-        stripped_last_line = physical_line.rstrip()
+    if self.line_number == self.total_lines:
+        stripped_last_line = self.physical_line.rstrip()
         if not stripped_last_line:
             return 0, "W391 blank line at end of file"
-        if stripped_last_line == physical_line:
-            return len(physical_line), "W292 no newline at end of file"
+        if stripped_last_line ==self. physical_line:
+            return len(self.physical_line), "W292 no newline at end of file"
 
 
-@register_check(physical_line, max_line_length, multiline,
-                        line_number, noqa)
+@register_check("physical_line", "max_line_length", "multiline",
+                "line_number", "noqa")
 def maximum_line_length(self):
     r"""Limit all lines to a maximum of 79 characters.
 
@@ -282,18 +282,18 @@ def maximum_line_length(self):
 
     Reports error E501.
     """
-    line = physical_line.rstrip()
+    line = self.physical_line.rstrip()
     length = len(line)
-    if length > max_line_length and not noqa:
+    if length > self.max_line_length and not noqa:
         # Special case: ignore long shebang lines.
-        if line_number == 1 and line.startswith('#!'):
+        if self.line_number == 1 and line.startswith('#!'):
             return
         # Special case for long URLs in multi-line docstrings or comments,
         # but still report the error when the 72 first chars are whitespaces.
         chunks = line.split()
-        if ((len(chunks) == 1 and multiline) or
+        if ((len(chunks) == 1 and self.multiline) or
             (len(chunks) == 2 and chunks[0] == '#')) and \
-                len(line) - len(chunks[-1]) < max_line_length - 7:
+                len(line) - len(chunks[-1]) < self.max_line_length - 7:
             return
         if hasattr(line, 'decode'):   # Python 2
             # The line could contain multi-byte characters
@@ -301,9 +301,9 @@ def maximum_line_length(self):
                 length = len(line.decode('utf-8'))
             except UnicodeError:
                 pass
-        if length > max_line_length:
-            return (max_line_length, "E501 line too long "
-                    "(%d > %d characters)" % (length, max_line_length))
+        if length > self.max_line_length:
+            return (self.max_line_length, "E501 line too long "
+                    "(%d > %d characters)" % (length, self.max_line_length))
 
 
 ##############################################################################
