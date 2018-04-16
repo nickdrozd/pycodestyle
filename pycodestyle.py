@@ -1730,8 +1730,8 @@ def update_counts(s, counts):
             counts[char] += 1
 
 
-def _is_eol_token(token):
-    return token[0] in NEWLINE or token[4][token[3][1]:].lstrip() == '\\\n'
+def _is_eol_token(kind, line, ecol):
+    return kind in NEWLINE or line[ecol:].lstrip() == '\\\n'
 
 
 if COMMENT_WITH_NL:
@@ -1912,21 +1912,22 @@ class Checker(object):
         tokengen = tokenize.generate_tokens(self.readline)
         try:
             for token in tokengen:
-                if token[2][0] > self.total_lines:
+                kind, text, (srow, scol), (_, ecol), line = token
+                if srow > self.total_lines:
                     return
-                self.noqa = token[4] and noqa(token[4])
-                self.maybe_check_physical(token)
+                self.noqa = line and noqa(line)
+                self.maybe_check_physical(kind, text, srow, scol, ecol, line)
                 yield token
         except (SyntaxError, tokenize.TokenError):
             self.report_invalid_syntax()
 
-    def maybe_check_physical(self, token):
+    def maybe_check_physical(self, kind, text, srow, scol, ecol, line):
         """If appropriate (based on token), check current physical line(s)."""
         # Called after every token, but act only on end of line.
-        if _is_eol_token(token):
+        if _is_eol_token(kind, line, ecol):
             # Obviously, a newline token ends a single physical line.
-            self.check_physical(token[4])
-        elif token[0] == tokenize.STRING and '\n' in token[1]:
+            self.check_physical(line)
+        elif kind == tokenize.STRING and '\n' in text:
             # Less obviously, a string that contains newlines is a
             # multiline string, either triple-quoted or with internal
             # newlines backslash-escaped. Check every physical line in the
@@ -1941,14 +1942,13 @@ class Checker(object):
             # - have to wind self.line_number back because initially it
             #   points to the last line of the string, and we want
             #   check_physical() to give accurate feedback
-            if noqa(token[4]):
+            if noqa(line):
                 return
             self.multiline = True
-            self.line_number = token[2][0]
-            _, src, (_, offset), _, _ = token
-            src = self.lines[self.line_number - 1][:offset] + src
-            for line in src.split('\n')[:-1]:
-                self.check_physical(line + '\n')
+            self.line_number = srow
+            src = self.lines[self.line_number - 1][:scol] + text
+            for _line in src.split('\n')[:-1]:
+                self.check_physical(_line + '\n')
                 self.line_number += 1
             self.multiline = False
 
